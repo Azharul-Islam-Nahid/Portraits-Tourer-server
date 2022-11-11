@@ -90,10 +90,26 @@ async function run() {
       res.send(review);
     });
 
+    // delete method
+
     app.delete("/reviews/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
       const result = reviewCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    // update method
+
+    app.patch("/reviews/:id", async (req, res) => {
+      const updateReview = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const updateDocument = {
+        $set: {
+          message: updateReview,
+        },
+      };
+      const result = await reviewCollection.updateOne(query, updateDocument);
       res.send(result);
     });
   } finally {
