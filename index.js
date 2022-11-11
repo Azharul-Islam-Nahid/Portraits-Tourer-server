@@ -62,6 +62,12 @@ async function run() {
 
     // all review get
 
+    app.post("/reviews", async (req, res) => {
+      const review = req.body;
+      const result = await reviewCollection.insertOne(review);
+      res.send(result);
+    });
+
     // single review email filter
 
     app.get("/reviews", async (req, res) => {
@@ -82,6 +88,13 @@ async function run() {
       const cursor = reviewCollection.find(query);
       const review = await cursor.toArray();
       res.send(review);
+    });
+
+    app.delete("/reviews/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = reviewCollection.deleteOne(query);
+      res.send(result);
     });
   } finally {
   }
