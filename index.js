@@ -40,6 +40,12 @@ async function run() {
       res.send(limitServices);
     });
 
+    app.post("/allservices", async (req, res) => {
+      const service = req.body;
+      const result = await serviceCollection.insertOne(service);
+      res.send(result);
+    });
+
     app.get("/allservices", async (req, res) => {
       const query = {};
       const cursor = serviceCollection.find(query);
@@ -52,21 +58,30 @@ async function run() {
       const query = { _id: ObjectId(id) };
       const service = await serviceCollection.findOne(query);
       res.send(service);
+    });
 
-      app.get("/reviews", async (req, res) => {
-        const query = {};
-        const cursor = reviewCollection.find(query);
-        const allReviews = await cursor.toArray();
-        res.send(allReviews);
-      });
+    // all review get
 
-      // review post method
+    // single review email filter
 
-      app.post("/reviews", async (req, res) => {
-        const review = req.body;
-        const result = await reviewCollection.insertOne(review);
-        res.send(result);
-      });
+    app.get("/reviews", async (req, res) => {
+      let query = {};
+      if (req.query.email) {
+        query = {
+          email: req.query.email,
+        };
+      }
+      const cursor = reviewCollection.find(query);
+      const allReviews = await cursor.toArray();
+      res.send(allReviews);
+    });
+
+    app.get("/reviews/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { id: id };
+      const cursor = reviewCollection.find(query);
+      const review = await cursor.toArray();
+      res.send(review);
     });
   } finally {
   }
