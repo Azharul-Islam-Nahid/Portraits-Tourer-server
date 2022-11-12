@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 require("dotenv").config();
 
@@ -25,6 +26,22 @@ const client = new MongoClient(uri, {
   useUnifiedTopology: true,
   serverApi: ServerApiVersion.v1,
 });
+
+function verifyJWT(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).send({ message: "unauthorized access" });
+  }
+  const token = authHeader.split(" ")[1];
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function (err, decoded) {
+    if (err) {
+      return res.status(401).send({ message: "unauthorized access" });
+    }
+    req.decoded = decoded;
+    next();
+  });
+}
+
 async function run() {
   try {
     const serviceCollection = client
@@ -33,6 +50,14 @@ async function run() {
 
     const reviewCollection = client.db("portraitsTourer").collection("reviews");
 
+    app.post("/jwt", verifyJWT, (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: "1h",
+      });
+      res.send({ token });
+    });
+
     app.get("/limitservices", async (req, res) => {
       const query = {};
       const cursor = serviceCollection.find(query);
@@ -40,7 +65,7 @@ async function run() {
       res.send(limitServices);
     });
 
-    app.post("/allservices", async (req, res) => {
+    app.post("/allservices", verifyJWT, async (req, res) => {
       const service = req.body;
       const result = await serviceCollection.insertOne(service);
       res.send(result);
@@ -62,7 +87,7 @@ async function run() {
 
     // all review get
 
-    app.post("/reviews", async (req, res) => {
+    app.post("/reviews", verifyJWT, async (req, res) => {
       const review = req.body;
       const result = await reviewCollection.insertOne(review);
       res.send(result);
@@ -70,7 +95,11 @@ async function run() {
 
     // single review email filter
 
-    app.get("/reviews", async (req, res) => {
+    app.get("/reviews", verifyJWT, async (req, res) => {
+      const decoded = req.decoded;
+      if (decoded.email !== req.query.email) {
+        res.status(403).send({ message: "unauthorized access" });
+      }
       let query = {};
       if (req.query.email) {
         query = {
@@ -101,17 +130,18 @@ async function run() {
 
     // update method
 
-    app.patch("/reviews/:id", async (req, res) => {
-      const updateReview = req.params.id;
-      const query = { _id: ObjectId(id) };
-      const updateDocument = {
-        $set: {
-          message: updateReview,
-        },
-      };
-      const result = await reviewCollection.updateOne(query, updateDocument);
-      res.send(result);
-    });
+    // app.patch('/reviews/:id', async (req, res) => {
+    //   const id = req.params.id;
+    //   const message = req.params.message;
+    //   const query = { _id: ObjectId(id) };
+    //   const updateDocument = {
+    //     $set: {
+    //       message: message,
+    //     },
+    //   };
+    //   const result = await reviewCollection.updateOne(query, updateDocument);
+    //   res.send(result);
+    // });
   } finally {
   }
 }
