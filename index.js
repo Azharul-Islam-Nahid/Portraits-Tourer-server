@@ -60,7 +60,7 @@ async function run() {
 
     app.get("/limitservices", async (req, res) => {
       const query = {};
-      const cursor = serviceCollection.find(query);
+      const cursor = serviceCollection.find(query).sort({ $natural: -1 });
       const limitServices = await cursor.limit(3).toArray();
       res.send(limitServices);
     });
