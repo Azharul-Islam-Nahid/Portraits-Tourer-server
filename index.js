@@ -50,7 +50,7 @@ async function run() {
 
     const reviewCollection = client.db("portraitsTourer").collection("reviews");
 
-    app.post("/jwt", verifyJWT, (req, res) => {
+    app.post("/jwt", (req, res) => {
       const user = req.body;
       const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
         expiresIn: "1h",
@@ -65,7 +65,7 @@ async function run() {
       res.send(limitServices);
     });
 
-    app.post("/allservices", verifyJWT, async (req, res) => {
+    app.post("/allservices", async (req, res) => {
       const service = req.body;
       const result = await serviceCollection.insertOne(service);
       res.send(result);
@@ -87,7 +87,7 @@ async function run() {
 
     // all review get
 
-    app.post("/reviews", verifyJWT, async (req, res) => {
+    app.post("/addreviews", async (req, res) => {
       const review = req.body;
       const result = await reviewCollection.insertOne(review);
       res.send(result);
@@ -95,7 +95,7 @@ async function run() {
 
     // single review email filter
 
-    app.get("/reviews", verifyJWT, async (req, res) => {
+    app.get("/review", verifyJWT, async (req, res) => {
       const decoded = req.decoded;
       if (decoded.email !== req.query.email) {
         res.status(403).send({ message: "unauthorized access" });
@@ -121,27 +121,28 @@ async function run() {
 
     // delete method
 
-    app.delete("/reviews/:id", async (req, res) => {
+    app.delete('/review/:id', async(req,res)=>{
       const id = req.params.id;
-      const query = { _id: ObjectId(id) };
-      const result = reviewCollection.deleteOne(query);
-      res.send(result);
-    });
+      const query = {_id: ObjectId(id)};
+      const result = await reviewCollection.deleteOne(query);
+      res.send(result)
+  })
 
     // update method
 
-    // app.patch('/reviews/:id', async (req, res) => {
-    //   const id = req.params.id;
-    //   const message = req.params.message;
-    //   const query = { _id: ObjectId(id) };
-    //   const updateDocument = {
-    //     $set: {
-    //       message: message,
-    //     },
-    //   };
-    //   const result = await reviewCollection.updateOne(query, updateDocument);
-    //   res.send(result);
-    // });
+  app.patch('/review/:id', async(req, res)=>{
+    const id = req.params.id;
+    const updatedReview = req.body.review;
+    const query = {_id: ObjectId(id)};
+    const updateDoc = {
+        $set: {
+            review: updatedReview
+        },
+      };
+    const result = await reviewCollection.updateOne(query, updateDoc);
+    res.send(result);
+})
+
   } finally {
   }
 }
